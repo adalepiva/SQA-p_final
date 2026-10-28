@@ -1,0 +1,68 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonar-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sonar:
+    name: SonarCloud analysis and Quality Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      XDEBUG_MODE: coverage
+      REQUIRE_PHP_COVERAGE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify SonarCloud secret
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "::error::SONAR_TOKEN is missing or unavailable for this event."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: xdebug
+
+      - name: Install test dependencies
+        run: npm ci
+
+      # Generate coverage in this job so reports match the analyzed checkout.
+      - name: JavaScript tests and LCOV coverage
+        run: npm test
+
+      - name: PHP regression tests and Clover coverage
+        run: npm run test:php
+
+      - name: Verify coverage reports
+        run: |
+          test -s coverage/lcov.info
+          test -s reports/php-coverage.xml
+
+      - name: Analyze SonarCloud and wait for Quality Gate
+        uses: SonarSource/sonarqube-scan-action@v8.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
