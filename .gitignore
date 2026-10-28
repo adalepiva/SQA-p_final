@@ -1,0 +1,8 @@
+﻿.runtime/
+node_modules/
+.env
+*.zip
+coverage/
+reports/
+tmp/
+vendor/
