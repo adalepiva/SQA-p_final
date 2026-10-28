@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-10-28T03:09:35.698Z",
+  "js": {
+    "lines": {
+      "total": 396,
+      "covered": 390,
+      "skipped": 0,
+      "pct": 98.48
+    },
+    "statements": {
+      "total": 396,
+      "covered": 390,
+      "skipped": 0,
+      "pct": 98.48
+    },
+    "functions": {
+      "total": 20,
+      "covered": 20,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 104,
+      "covered": 88,
+      "skipped": 0,
+      "pct": 84.61
+    },
+    "branchesTrue": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": "Unknown"
+    }
+  },
+  "php": {
+    "covered": 196,
+    "total": 251,
+    "percent": 78.08764940239044
+  },
+  "duplication": {
+    "lines": 1116,
+    "tokens": 13191,
+    "sources": 10,
+    "clones": 0,
+    "duplicatedLines": 0,
+    "duplicatedTokens": 0,
+    "percentage": 0,
+    "percentageTokens": 0,
+    "newDuplicatedLines": 0,
+    "newClones": 0
+  },
+  "e2e": {
+    "assertions": 19,
+    "failed": 0
+  },
+  "jobs": {
+    "build": "success",
+    "test": "success",
+    "analyze": "success"
+  }
+}

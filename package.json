@@ -1,0 +1,27 @@
+{
+  "name": "agenda-sqa-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "vitest run --coverage",
+    "test:php": "node scripts/php.cjs",
+    "lint": "eslint desa_Agenda_Proyecto2/agenda-contactos/assets --max-warnings 0",
+    "format:check": "prettier --check desa_Agenda_Proyecto2/agenda-contactos/assets/*.js",
+    "analyze": "npm run lint && npm run format:check && jscpd desa_Agenda_Proyecto2/agenda-contactos --min-lines 8 --min-tokens 70 --threshold 5 --reporters json,html --output reports/duplication",
+    "test:e2e": "newman run tests/postman/agenda.postman_collection.json --env-var baseUrl=http://127.0.0.1:8080 --reporters cli,junit,json --reporter-junit-export reports/newman.xml --reporter-json-export reports/newman.json",
+    "report": "node scripts/report.cjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.1",
+    "eslint": "9.39.1",
+    "globals": "16.5.0",
+    "prettier": "3.6.2",
+    "vitest": "3.2.4",
+    "@vitest/coverage-v8": "3.2.4",
+    "jsdom": "26.1.0",
+    "jscpd": "4.0.5",
+    "newman": "6.2.1",
+    "archiver": "7.0.1"
+  }
+}

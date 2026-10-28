@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="10" failures="0" errors="0" time="0.7087039">
+    <testsuite name="tests/frontend/agenda.test.js" timestamp="2026-10-28T02:57:32.855Z" hostname="MAINPC" tests="7" failures="0" errors="0" skipped="0" time="0.4210564">
+        <testcase classname="tests/frontend/agenda.test.js" name="F01 renderiza datos como texto y envía nonce sin cache" time="0.0734965">
+        </testcase>
+        <testcase classname="tests/frontend/agenda.test.js" name="F02 búsqueda y listado vacío" time="0.0451897">
+        </testcase>
+        <testcase classname="tests/frontend/agenda.test.js" name="F03 crear contacto, limpiar formulario y recargar listado" time="0.0514008">
+        </testcase>
+        <testcase classname="tests/frontend/agenda.test.js" name="F04 editar y borrar con enlaces simples=true" time="0.0681554">
+        </testcase>
+        <testcase classname="tests/frontend/agenda.test.js" name="F04 editar y borrar con enlaces simples=false" time="0.0808654">
+        </testcase>
+        <testcase classname="tests/frontend/agenda.test.js" name="F05 error inicial, recuperación y cancelación de borrado" time="0.0530992">
+        </testcase>
+        <testcase classname="tests/frontend/agenda.test.js" name="F06 fallo HTTP al guardar conserva formulario y muestra mensaje" time="0.0472745">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/frontend/auth-weather.test.js" timestamp="2026-10-28T02:57:32.858Z" hostname="MAINPC" tests="3" failures="0" errors="0" skipped="0" time="0.2876475">
+        <testcase classname="tests/frontend/auth-weather.test.js" name="F07 alterna acceso y registro; gestiona errores de autenticación y logout" time="0.105084">
+        </testcase>
+        <testcase classname="tests/frontend/auth-weather.test.js" name="F08 clima, validación, búsqueda, elección y actualización" time="0.1331487">
+        </testcase>
+        <testcase classname="tests/frontend/auth-weather.test.js" name="F09 falla servicio y recupera botones; respuesta incompleta" time="0.0476576">
+        </testcase>
+    </testsuite>
+</testsuites>

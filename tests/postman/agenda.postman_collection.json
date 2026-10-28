@@ -1,0 +1,394 @@
+{
+  "info": {
+    "name": "Agenda SQA — E2E HTTP",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "E01 Acceso anónimo rechazado",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E02 Obtener formulario",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/?pagename=mis-contactos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const m = pm.response.text().match(/data-auth[^>]*data-nonce=\"([^\"]+)\"/);",
+              "pm.test('Nonce visitante presente', () => pm.expect(m).not.to.equal(null));",
+              "if(m) pm.collectionVariables.set('guestNonce', m[1]);",
+              "pm.collectionVariables.set('user', 'e2e_' + Date.now());"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E03 Registrar usuario",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Agenda-Nonce",
+            "value": "{{guestNonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/registro",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\":\"Prueba E2E\",\"usuario\":\"{{user}}\",\"email\":\"{{user}}@example.test\",\"password\":\"E2e-Sqa-2026!\",\"confirm_password\":\"E2e-Sqa-2026!\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E04 Obtener nonce de sesión",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/?pagename=mis-contactos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "const m = pm.response.text().match(/data-agenda[^>]*data-nonce=\"([^\"]+)\"/);",
+              "pm.test('Sesión activa', () => pm.expect(m).not.to.equal(null));",
+              "if(m) pm.collectionVariables.set('nonce', m[1]);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E05 Validar campos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-WP-Nonce",
+            "value": "{{nonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\":\"Ana\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 422', () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E06 Crear contacto",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-WP-Nonce",
+            "value": "{{nonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\":\"Ana E2E\",\"telefono\":\"12345678\",\"telefono2\":\"87654321\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "pm.test('ID entero', () => pm.expect(pm.response.json().data.id).to.be.a('number'));",
+              "pm.collectionVariables.set('id', pm.response.json().data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E07 Leer contacto",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-WP-Nonce",
+            "value": "{{nonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos/{{id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Nombre persistido', () => pm.expect(pm.response.json().data.nombre).to.eql('Ana E2E'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E08 Buscar contacto",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-WP-Nonce",
+            "value": "{{nonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos&buscar=Ana"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Búsqueda encuentra creado', () => pm.expect(pm.response.json().data.some(x => x.id === Number(pm.collectionVariables.get('id')))).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E09 Actualizar contacto",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-WP-Nonce",
+            "value": "{{nonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos/{{id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\":\"Ana Actualizada\",\"telefono\":\"12345678\",\"telefono2\":\"87654321\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Cambio persistido', () => pm.expect(pm.response.json().data.nombre).to.eql('Ana Actualizada'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E10 Borrar contacto",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-WP-Nonce",
+            "value": "{{nonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos/{{id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E11 Regresión contacto eliminado",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-WP-Nonce",
+            "value": "{{nonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos/{{id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E12 Cerrar sesión",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-WP-Nonce",
+            "value": "{{nonce}}"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/logout",
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "E13 Acceso posterior rechazado",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

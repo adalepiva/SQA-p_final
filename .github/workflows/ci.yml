@@ -1,0 +1,137 @@
+name: SQA CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sqa-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-build
+          path: artifacts/agenda-contactos.zip
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: agenda_sqa
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      XDEBUG_MODE: coverage
+      REQUIRE_PHP_COVERAGE: '1'
+      SQA_DB_HOST: '127.0.0.1:3306'
+      SQA_DB_PASSWORD: root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli
+          coverage: xdebug
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:php
+      - name: Prepare isolated WordPress
+        run: |
+          mkdir -p .runtime
+          curl --fail --location https://wordpress.org/wordpress-6.8.3.zip -o .runtime/wordpress.zip
+          unzip -q .runtime/wordpress.zip -d .runtime
+          cp -r desa_Agenda_Proyecto2/agenda-contactos .runtime/wordpress/wp-content/plugins/
+          php scripts/setup-wp.php
+      - name: Integration with WordPress and MySQL
+        shell: bash
+        run: php tests/integration/wordpress.php | tee reports/integration.txt
+      - name: E2E Postman over HTTP
+        run: |
+          php -S 127.0.0.1:8080 -t .runtime/wordpress > reports/server.log 2>&1 &
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8080/ > /dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-evidence
+          path: |
+            coverage/
+            reports/
+  analyze:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run analyze
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: analysis-evidence
+          path: reports/
+  report:
+    if: always()
+    needs: [build, test, analyze]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-evidence
+        continue-on-error: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: analysis-evidence
+          path: reports
+        continue-on-error: true
+      - run: npm run report
+        env:
+          SQA_BUILD: ${{ needs.build.result }}
+          SQA_TEST: ${{ needs.test.result }}
+          SQA_ANALYZE: ${{ needs.analyze.result }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quality-dashboard
+          path: reports/dashboard.html
+      - name: Quality Gate
+        if: always()
+        env:
+          RESULTS: '${{ needs.build.result }} ${{ needs.test.result }} ${{ needs.analyze.result }}'
+        run: test "$RESULTS" = "success success success"

@@ -1,0 +1,119 @@
+.agenda-contactos {
+    max-width: 1000px;
+    padding: 24px;
+    margin: 24px auto;
+    background: #f3f6fb;
+    color: #172b4d;
+    border-radius: 12px;
+    font: 16px/1.5 system-ui, sans-serif;
+}
+
+.agenda-contactos [hidden] {
+    display: none !important;
+}
+
+.agenda-contactos .agenda-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: end;
+    margin: 20px 0;
+}
+
+.agenda-contactos label {
+    display: block;
+}
+
+.agenda-contactos input,
+.agenda-contactos textarea {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid #899bb5;
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: white;
+    color: #172b4d;
+    font: inherit;
+}
+
+.agenda-contactos button {
+    border: 0;
+    padding: 10px 16px;
+    border-radius: 6px;
+    background: #215cc4;
+    color: white;
+    cursor: pointer;
+    font: inherit;
+}
+
+.agenda-contactos button:disabled {
+    opacity: .55;
+    cursor: wait;
+}
+
+.agenda-contactos button:focus-visible,
+.agenda-contactos input:focus-visible,
+.agenda-contactos textarea:focus-visible {
+    outline: 3px solid #df9300;
+    outline-offset: 3px;
+}
+
+.agenda-contactos .agenda-editor {
+    display: grid;
+    gap: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #c2d0e4;
+    border-radius: 8px;
+    background: white;
+}
+
+.agenda-contactos .agenda-card {
+    padding: 16px;
+    margin: 12px 0;
+    border: 1px solid #dce4ef;
+    border-radius: 8px;
+    background: white;
+    overflow-wrap: anywhere;
+}
+
+.agenda-contactos .agenda-card h3 {
+    margin: 0 0 8px;
+}
+
+.agenda-contactos .agenda-card p {
+    margin: 4px 0;
+    white-space: pre-wrap;
+}
+
+.agenda-contactos .agenda-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.agenda-contactos .agenda-delete {
+    background: #a32727;
+}
+
+.agenda-weather header h2 { margin: 0 0 8px; }
+.agenda-weather header p { margin: 0; }
+.agenda-weather .agenda-toolbar label { flex: 1 1 220px; }
+.agenda-weather-results { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.agenda-weather-results button { text-align: left; }
+.agenda-weather .agenda-weather-temperature { font-size: 2.5rem; font-weight: 700; }
+.agenda-weather-source { font-size: .85rem; margin-bottom: 0; }
+.agenda-weather-source a { color: #174993; text-decoration: underline; }
+.agenda-weather [data-weather-status]:not(:empty) { padding: 12px 0; }
+
+.agenda-contactos [data-message] {
+    padding: 12px;
+    border-left: 4px solid #215cc4;
+    background: #e1ebfb;
+}
+
+.agenda-contactos [data-message][data-error="true"] {
+    border-color: #a32727;
+    background: #fce5e5;
+}
