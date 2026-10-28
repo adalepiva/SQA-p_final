@@ -1,0 +1,96 @@
+{
+  "info": {
+    "name": "Agenda - E2E CRUD de contactos",
+    "description": "Ejecutar en orden contra WordPress de prueba con el plugin activo y la página mis-contactos. Crea un usuario ficticio, conserva cookies y elimina el contacto creado. No ejecutar en producción.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Obtener nonce de visitante",
+      "request": { "method": "GET", "url": "{{baseUrl}}/?pagename=mis-contactos" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Página disponible', () => pm.response.to.have.status(200));",
+        "const match = pm.response.text().match(/data-auth[^>]*data-nonce=\"([^\"]+)\"/);",
+        "pm.test('Nonce visitante presente', () => pm.expect(match).not.to.equal(null));",
+        "if (match) pm.collectionVariables.set('guestNonce', match[1]);",
+        "pm.collectionVariables.set('user', 'sqa_' + Date.now() + '_' + Math.floor(Math.random() * 100000));"
+      ] } }]
+    },
+    {
+      "name": "Registrar usuario de prueba",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/?rest_route=/agenda/v1/registro",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-Agenda-Nonce", "value": "{{guestNonce}}" }],
+        "body": { "mode": "raw", "raw": "{\"nombre\":\"Prueba SQA\",\"usuario\":\"{{user}}\",\"email\":\"{{user}}@example.test\",\"password\":\"E2e-Sqa-2026!\",\"confirm_password\":\"E2e-Sqa-2026!\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Registro 201', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "Obtener nonce de sesión",
+      "request": { "method": "GET", "url": "{{baseUrl}}/?pagename=mis-contactos" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Página autenticada 200', () => pm.response.to.have.status(200));",
+        "const match = pm.response.text().match(/data-agenda[^>]*data-nonce=\"([^\"]+)\"/);",
+        "pm.test('Sesión iniciada', () => pm.expect(match).not.to.equal(null));",
+        "if (match) pm.collectionVariables.set('nonce', match[1]);"
+      ] } }]
+    },
+    {
+      "name": "POST crear contacto",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-WP-Nonce", "value": "{{nonce}}" }],
+        "body": { "mode": "raw", "raw": "{\"nombre\":\"Ana E2E\",\"telefono\":\"12345678\",\"telefono2\":\"87654321\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Creación 201', () => pm.response.to.have.status(201));",
+        "const data = pm.response.json().data;",
+        "pm.test('ID numérico', () => pm.expect(data.id).to.be.a('number'));",
+        "pm.collectionVariables.set('contactId', data.id);"
+      ] } }]
+    },
+    {
+      "name": "GET listar contactos",
+      "request": { "method": "GET", "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos", "header": [{ "key": "X-WP-Nonce", "value": "{{nonce}}" }] },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Listado 200', () => pm.response.to.have.status(200));",
+        "pm.test('Incluye contacto creado', () => pm.expect(pm.response.json().data.some(c => c.id === Number(pm.collectionVariables.get('contactId')))).to.eql(true));"
+      ] } }]
+    },
+    {
+      "name": "GET leer contacto",
+      "request": { "method": "GET", "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos/{{contactId}}", "header": [{ "key": "X-WP-Nonce", "value": "{{nonce}}" }] },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Lectura 200', () => pm.response.to.have.status(200));",
+        "pm.test('Nombre persistido', () => pm.expect(pm.response.json().data.nombre).to.eql('Ana E2E'));"
+      ] } }]
+    },
+    {
+      "name": "PUT actualizar contacto",
+      "request": {
+        "method": "PUT", "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos/{{contactId}}",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-WP-Nonce", "value": "{{nonce}}" }],
+        "body": { "mode": "raw", "raw": "{\"nombre\":\"Ana Actualizada\",\"telefono\":\"12345678\",\"telefono2\":\"87654321\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Actualización 200', () => pm.response.to.have.status(200));",
+        "pm.test('Nombre actualizado', () => pm.expect(pm.response.json().data.nombre).to.eql('Ana Actualizada'));"
+      ] } }]
+    },
+    {
+      "name": "DELETE eliminar contacto",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos/{{contactId}}", "header": [{ "key": "X-WP-Nonce", "value": "{{nonce}}" }] },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Eliminación 200', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "GET confirmar eliminación",
+      "request": { "method": "GET", "url": "{{baseUrl}}/?rest_route=/agenda/v1/contactos/{{contactId}}", "header": [{ "key": "X-WP-Nonce", "value": "{{nonce}}" }] },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Contacto ya no existe: 404', () => pm.response.to.have.status(404));"] } }]
+    },
+    {
+      "name": "Cerrar sesión de prueba",
+      "request": { "method": "POST", "url": "{{baseUrl}}/?rest_route=/agenda/v1/logout", "header": [{ "key": "X-WP-Nonce", "value": "{{nonce}}" }] },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Logout 200', () => pm.response.to.have.status(200));"] } }]
+    }
+  ]
+}
