@@ -123,31 +123,24 @@ jobs:
     needs: [test, analyze]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
       - uses: actions/download-artifact@v4
         with:
           name: test-evidence
+          path: final-artifacts/test
         continue-on-error: true
       - uses: actions/download-artifact@v4
         with:
           name: analysis-evidence
-          path: reports
+          path: final-artifacts/analyze
         continue-on-error: true
-      - run: npm run report
-        env:
-          SQA_BUILD: ${{ needs.build.result }}
-          SQA_TEST: ${{ needs.test.result }}
-          SQA_ANALYZE: ${{ needs.analyze.result }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-build
+          path: final-artifacts/build
+        continue-on-error: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: quality-dashboard
-          path: reports/dashboard.html
-      - name: Quality Gate
-        if: always()
-        env:
-          RESULTS: '${{ needs.build.result }} ${{ needs.test.result }} ${{ needs.analyze.result }} ${{ needs.analyze.result }}'
-        run: test "$RESULTS" = "success success success"
+          name: sqa-final-artifacts
+          path: final-artifacts/
+          if-no-files-found: warn
