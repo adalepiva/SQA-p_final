@@ -150,4 +150,4 @@ jobs:
         if: always()
         env:
           RESULTS: '${{ needs.build.result }} ${{ needs.test.result }} ${{ needs.analyze.result }} ${{ needs.analyze.result }}'
-        run: test "$RESULTS" = "success success success success"
+        run: test "$RESULTS" = "success success success"
