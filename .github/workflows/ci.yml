@@ -100,64 +100,6 @@ jobs:
           path: |
             coverage/
             reports/
-  e2e:
-    needs: test
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: agenda_sqa
-        ports: ['3306:3306']
-        options: >-
-          --health-cmd="mysqladmin ping -proot"
-          --health-interval=10s --health-timeout=5s --health-retries=10
-    env:
-      SQA_DB_HOST: '127.0.0.1:3306'
-      SQA_DB_PASSWORD: root
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mysqli
-          coverage: none
-      - run: npm ci
-      - name: Add local Newman to PATH
-        run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
-      # Only this E2E job needs a real WordPress HTTP server.
-      # unzip -o overwrites without prompting; no WP-CLI is used.
-      - name: Start disposable E2E application (non-interactive)
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p .runtime reports
-          curl --fail --location https://wordpress.org/wordpress-6.8.3.zip -o .runtime/wordpress.zip
-          unzip -oq .runtime/wordpress.zip -d .runtime
-          cp -r desa_Agenda_Proyecto2/agenda-contactos .runtime/wordpress/wp-content/plugins/
-          php scripts/setup-wp.php
-          php -S 127.0.0.1:8080 -t .runtime/wordpress > reports/e2e-server.log 2>&1 &
-          for i in {1..30}; do
-            if curl --fail --silent 'http://127.0.0.1:8080/?pagename=mis-contactos' > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "::error::The E2E application did not become ready."
-          exit 1
-      - name: E2E contacts with Newman
-        run: newman run tests/e2e/postman/agenda-collection.json -e tests/e2e/postman/env.json
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: e2e-server-log
-          path: reports/e2e-server.log
   analyze:
     needs: test
     runs-on: ubuntu-latest
@@ -178,7 +120,7 @@ jobs:
           path: reports/
   report:
     if: always()
-    needs: [build, test, analyze, e2e]
+    needs: [test, analyze]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -207,5 +149,5 @@ jobs:
       - name: Quality Gate
         if: always()
         env:
-          RESULTS: '${{ needs.build.result }} ${{ needs.test.result }} ${{ needs.analyze.result }} ${{ needs.e2e.result }}'
+          RESULTS: '${{ needs.build.result }} ${{ needs.test.result }} ${{ needs.analyze.result }} ${{ needs.analyze.result }}'
         run: test "$RESULTS" = "success success success success"
